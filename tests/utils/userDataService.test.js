@@ -83,7 +83,7 @@ describe("computeMetadataHash function", () => {
 });
 
 describe("getPfpFromFullId function", () => {
-  const defaultUrl = `${STARKNET_ID_URL}/api/identicons/`;
+  const defaultUrl = `https://identicon.starknet.id/`;
 
   it("should return the image URL if pp_url is present", () => {
     const identity = { id: "123", pp_url: "http://example.com/profile.jpg" };
