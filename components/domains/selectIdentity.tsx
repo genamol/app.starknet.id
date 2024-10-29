@@ -87,7 +87,7 @@ const SelectIdentity: FunctionComponent<SelectIdentityProps> = ({
             <ListItemIcon>
               <img
                 width={"25px"}
-                src={`${process.env.NEXT_PUBLIC_STARKNET_ID}/api/identicons/${tokenId}`}
+                src={`https://identicon.starknet.id/${tokenId}`}
                 alt="starknet.id avatar"
               />
             </ListItemIcon>
