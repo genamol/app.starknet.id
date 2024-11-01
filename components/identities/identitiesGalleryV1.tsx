@@ -154,7 +154,7 @@ const IdentitiesGalleryV1: FunctionComponent<IdentitiesGalleryV1Props> = ({
                 <img
                   width={150}
                   height={150}
-                  src={`${process.env.NEXT_PUBLIC_STARKNET_ID}/api/identicons/0`}
+                  src="https://identicon.starknet.id/0"
                   alt="avatar"
                   onClick={() => router.push(`/externaldomains/${domain}`)}
                 />

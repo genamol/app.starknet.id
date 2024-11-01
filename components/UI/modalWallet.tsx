@@ -12,6 +12,7 @@ import CopyIcon from "./iconsComponents/icons/copyIcon";
 import DoneIcon from "./iconsComponents/icons/doneIcon";
 import { useNotificationManager } from "../../hooks/useNotificationManager";
 import { useCopyToClipboard } from "@/hooks/useCopy";
+import { getConnectorIcon } from "@/utils/connectorWrapper";
 
 type ModalWalletProps = {
   closeModal: () => void;
@@ -62,16 +63,14 @@ const ModalWallet: FunctionComponent<ModalWalletProps> = ({
         </button>
         <div className={styles.menu_title}>
           <div className={styles.menu_title}>
-            {connector && connector.id === "braavos" ? (
+            {connector && (
               <img
-                width={"25px"}
-                src="/braavos/braavosLogo.svg"
-                alt="braavos logo"
+                src={getConnectorIcon(connector.id)}
+                width={25}
+                height={25}
+                alt="connector logo"
               />
-            ) : (
-              <ArgentIcon color={"#f36a3d"} width={"25px"} />
             )}
-
             <p className="ml-2">Connected with &nbsp;{domain}&nbsp;</p>
           </div>
         </div>

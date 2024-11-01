@@ -33,6 +33,5 @@ export async function computeMetadataHash(
 
 export const getPfpFromFullId = (identity: FullId): string => {
   if (identity && identity.pp_url) return getImgUrl(identity.pp_url);
-  else
-    return `${process.env.NEXT_PUBLIC_STARKNET_ID}/api/identicons/${identity.id}`;
+  else return `https://identicon.starknet.id/${identity.id}`;
 };
