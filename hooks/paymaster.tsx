@@ -58,7 +58,16 @@ const usePaymaster = (
   const [deploymentTypedData, setDeploymentTypedData] = useState<TypedData>();
   const [invalidTx, setInvalidTx] = useState<boolean>(false);
   const [txError, setTxError] = useState<ErrorMessage>();
-  const { signTypedDataAsync, error: signError } = useSignTypedData({});
+  const { signTypedDataAsync, error: signError } = useSignTypedData({
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    skipDeploy: true,
+    params: {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      skipDeploy: true,
+    },
+  });
 
   const argentWallet = useMemo(
     () => connector?.id === "argentX" /*|| connector?.id === "argentMobile"*/,
@@ -211,12 +220,7 @@ const usePaymaster = (
     if (!account) return;
     if (argentWallet || isDeployed) {
       if (deploymentData && deploymentTypedData) {
-        signTypedDataAsync(
-          deploymentTypedData,
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
-          { skipDeploy: true }
-        ).then((signature: Signature) => {
+        signTypedDataAsync(deploymentTypedData).then((signature: Signature) => {
           fetch(`${gaslessOptions.baseUrl}/gasless/v1/execute`, {
             method: "POST",
             headers: {
