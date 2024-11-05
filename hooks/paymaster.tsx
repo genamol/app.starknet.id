@@ -203,17 +203,18 @@ const usePaymaster = (
     if (!account) return;
     if (typedData)
       signTypedDataAsync(typedData).then((signature: Signature) => {
+        const body: { [id: string]: object | string } = {
+          userAddress: account.address,
+          typedData: JSON.stringify(typedData),
+          signature: (signature as string[]).map(decimalToHex),
+        };
+        if (!isDeployed && deploymentData) body.deploymentData = deploymentData;
         fetch(`${gaslessOptions.baseUrl}/gasless/v1/execute`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            userAddress: account.address,
-            typedData: JSON.stringify(typedData),
-            signature: (signature as string[]).map(decimalToHex),
-            deploymentData,
-          }),
+          body: JSON.stringify(body),
         })
           .then((res) => res.json())
           .then((data) => {
@@ -227,7 +228,15 @@ const usePaymaster = (
           });
       });
     else execute().then((res) => then(res.transaction_hash));
-  }, [account, deploymentData, then, signTypedDataAsync, typedData, execute]);
+  }, [
+    account,
+    deploymentData,
+    then,
+    signTypedDataAsync,
+    typedData,
+    execute,
+    isDeployed,
+  ]);
 
   return {
     handleRegister,
