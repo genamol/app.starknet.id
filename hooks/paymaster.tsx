@@ -14,6 +14,7 @@ import {
   useAccount,
   useConnect,
   useSendTransaction,
+  useSignTypedData,
 } from "@starknet-react/core";
 import {
   AccountInterface,
@@ -57,6 +58,7 @@ const usePaymaster = (
   const [deploymentTypedData, setDeploymentTypedData] = useState<TypedData>();
   const [invalidTx, setInvalidTx] = useState<boolean>(false);
   const [txError, setTxError] = useState<ErrorMessage>();
+  const { signTypedDataAsync, error: signError } = useSignTypedData({});
 
   const argentWallet = useMemo(
     () => connector?.id === "argentX" /*|| connector?.id === "argentMobile"*/,
@@ -169,6 +171,11 @@ const usePaymaster = (
       loadingDeploymentData
     )
       return;
+    console.log({
+      userAddress: account.address,
+      calls: callData,
+      accountClassHash: deploymentData.class_hash,
+    });
     fetch(`${gaslessOptions.baseUrl}/gasless/v1/build-typed-data`, {
       method: "POST",
       headers: {
@@ -198,41 +205,41 @@ const usePaymaster = (
     loadingDeploymentData,
   ]);
 
+  console.log("signError", signError);
+
   const handleRegister = () => {
     if (!account) return;
-    if (argentWallet && (connector?.id !== "argentMobile" || isDeployed)) {
+    if (argentWallet || isDeployed) {
       if (deploymentData && deploymentTypedData) {
-        account
-          .signMessage(
-            deploymentTypedData,
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            { skipDeploy: true }
-          )
-          .then((signature: Signature) => {
-            fetch(`${gaslessOptions.baseUrl}/gasless/v1/execute`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                userAddress: account.address,
-                typedData: JSON.stringify(deploymentTypedData),
-                signature: (signature as string[]).map(decimalToHex),
-                deploymentData,
-              }),
+        signTypedDataAsync(
+          deploymentTypedData,
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          { skipDeploy: true }
+        ).then((signature: Signature) => {
+          fetch(`${gaslessOptions.baseUrl}/gasless/v1/execute`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              userAddress: account.address,
+              typedData: JSON.stringify(deploymentTypedData),
+              signature: (signature as string[]).map(decimalToHex),
+              deploymentData,
+            }),
+          })
+            .then((res) => res.json())
+            .then((data) => {
+              return then(data.transactionHash);
             })
-              .then((res) => res.json())
-              .then((data) => {
-                return then(data.transactionHash);
-              })
-              .catch((error) => {
-                console.error(
-                  "Error when executing (including deployment) with Paymaster:",
-                  error
-                );
-              });
-          });
+            .catch((error) => {
+              console.error(
+                "Error when executing (including deployment) with Paymaster:",
+                error
+              );
+            });
+        });
       } else
         executeCalls(
           account,
