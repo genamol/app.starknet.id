@@ -7,7 +7,6 @@ import {
   getGasFeesInGasToken,
   GasTokenPrice,
   fetchGasTokenPrices,
-  executeCalls,
 } from "@avnu/gasless-sdk";
 import {
   useProvider,
@@ -55,19 +54,10 @@ const usePaymaster = (
   });
   const { connector } = useConnect();
   const { isDeployed, deploymentData } = isStarknetDeployed(account?.address);
-  const [deploymentTypedData, setDeploymentTypedData] = useState<TypedData>();
+  const [typedData, setTypedData] = useState<TypedData>();
   const [invalidTx, setInvalidTx] = useState<boolean>(false);
   const [txError, setTxError] = useState<ErrorMessage>();
-  const { signTypedDataAsync, error: signError } = useSignTypedData({
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    skipDeploy: true,
-    params: {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      skipDeploy: true,
-    },
-  });
+  const { signTypedDataAsync } = useSignTypedData({});
 
   const argentWallet = useMemo(
     () => connector?.id === "argentX" /*|| connector?.id === "argentMobile"*/,
@@ -172,34 +162,29 @@ const usePaymaster = (
     connector?.id === "argentX" && !isDeployed && !deploymentData;
 
   useEffect(() => {
+    if (!account) return;
     if (
-      !account ||
-      isDeployed ||
-      !deploymentData ||
-      !argentWallet ||
-      loadingDeploymentData
+      !isDeployed &&
+      (!deploymentData || !argentWallet || loadingDeploymentData)
     )
       return;
-    console.log({
+    const body: { [id: string]: object | string } = {
       userAddress: account.address,
       calls: callData,
-      accountClassHash: deploymentData.class_hash,
-    });
+    };
+    if (!isDeployed && deploymentData)
+      body.accountClassHash = deploymentData.class_hash;
     fetch(`${gaslessOptions.baseUrl}/gasless/v1/build-typed-data`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        userAddress: account.address,
-        calls: callData,
-        accountClassHash: deploymentData.class_hash,
-      }),
+      body: JSON.stringify(body),
     })
       .then((res) => res.json())
       .then((data) => {
         if (data.messages || data.error) return;
-        setDeploymentTypedData(data);
+        setTypedData(data);
       })
       .catch((error) => {
         console.error("Error when fetching deployment typed data:", error);
@@ -214,57 +199,35 @@ const usePaymaster = (
     loadingDeploymentData,
   ]);
 
-  console.log("signError", signError);
-
-  const handleRegister = () => {
+  const handleRegister = useCallback(() => {
     if (!account) return;
-    if (argentWallet || isDeployed) {
-      if (deploymentData && deploymentTypedData) {
-        signTypedDataAsync(deploymentTypedData).then((signature: Signature) => {
-          fetch(`${gaslessOptions.baseUrl}/gasless/v1/execute`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              userAddress: account.address,
-              typedData: JSON.stringify(deploymentTypedData),
-              signature: (signature as string[]).map(decimalToHex),
-              deploymentData,
-            }),
+    if (typedData)
+      signTypedDataAsync(typedData).then((signature: Signature) => {
+        fetch(`${gaslessOptions.baseUrl}/gasless/v1/execute`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userAddress: account.address,
+            typedData: JSON.stringify(typedData),
+            signature: (signature as string[]).map(decimalToHex),
+            deploymentData,
+          }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            return then(data.transactionHash);
           })
-            .then((res) => res.json())
-            .then((data) => {
-              return then(data.transactionHash);
-            })
-            .catch((error) => {
-              console.error(
-                "Error when executing (including deployment) with Paymaster:",
-                error
-              );
-            });
-        });
-      } else
-        executeCalls(
-          account,
-          callData,
-          paymasterRewards.length === 0
-            ? {
-                gasTokenAddress: gasTokenPrice?.tokenAddress,
-                maxGasTokenAmount,
-              }
-            : {},
-          gaslessOptions
-        )
-          .then((res) => then(res.transactionHash))
           .catch((error) => {
-            console.error("Error when executing with Paymaster:", error);
+            console.error(
+              "Error when executing (including deployment) with Paymaster:",
+              error
+            );
           });
-    } else execute().then((res) => then(res.transaction_hash));
-  };
-
-  const loadingTypedData =
-    connector?.id !== "argentMobile" && deploymentData && !deploymentTypedData;
+      });
+    else execute().then((res) => then(res.transaction_hash));
+  }, [account, deploymentData, then, signTypedDataAsync, typedData, execute]);
 
   return {
     handleRegister,
@@ -279,7 +242,7 @@ const usePaymaster = (
     loadingDeploymentData,
     refreshRewards,
     invalidTx,
-    loadingTypedData,
+    loadingTypedData: !typedData,
     txError,
   };
 };
