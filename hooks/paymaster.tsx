@@ -201,7 +201,7 @@ const usePaymaster = (
 
   const handleRegister = useCallback(() => {
     if (!account) return;
-    if (typedData)
+    if (typedData && !argentWallet) {
       signTypedDataAsync(typedData).then((signature: Signature) => {
         const body: { [id: string]: object | string } = {
           userAddress: account.address,
@@ -221,13 +221,10 @@ const usePaymaster = (
             return then(data.transactionHash);
           })
           .catch((error) => {
-            console.error(
-              "Error when executing (including deployment) with Paymaster:",
-              error
-            );
+            console.error("Error when executing with Paymaster:", error);
           });
       });
-    else execute().then((res) => then(res.transaction_hash));
+    } else execute().then((res) => then(res.transaction_hash));
   }, [
     account,
     deploymentData,
@@ -236,6 +233,7 @@ const usePaymaster = (
     typedData,
     execute,
     isDeployed,
+    argentWallet,
   ]);
 
   return {
@@ -251,7 +249,7 @@ const usePaymaster = (
     loadingDeploymentData,
     refreshRewards,
     invalidTx,
-    loadingTypedData: !typedData,
+    loadingTypedData: !typedData && (argentWallet || isDeployed),
     txError,
   };
 };
