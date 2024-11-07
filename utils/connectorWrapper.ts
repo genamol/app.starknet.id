@@ -5,19 +5,6 @@ import { WebWalletConnector } from "starknetkit/webwallet";
 import { getBrowser } from "./browserService";
 import { constants } from "starknet";
 
-interface WalletConfig {
-  id: string;
-  name: string;
-  icon: string;
-  downloads?: {
-    chrome?: string;
-    firefox?: string;
-    edge?: string;
-    safari?: string;
-  };
-  website: string;
-  available: boolean;
-}
 
 export const getConnectors = () => {
   const connectors = [
@@ -119,7 +106,7 @@ export const isInArgentMobileAppBrowser = (): boolean => {
 };
 
 
-const wallets: WalletConfig[] = [
+const wallets = [
   {
     id: "argentX",
     name: "Argent X",
