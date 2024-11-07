@@ -5,6 +5,20 @@ import { WebWalletConnector } from "starknetkit/webwallet";
 import { getBrowser } from "./browserService";
 import { constants } from "starknet";
 
+interface WalletConfig {
+  id: string;
+  name: string;
+  icon: string;
+  downloads?: {
+    chrome?: string;
+    firefox?: string;
+    edge?: string;
+    safari?: string;
+  };
+  website: string;
+  available: boolean;
+}
+
 export const getConnectors = () => {
   const connectors = [
     new InjectedConnector({ options: { id: "argentX" } }),
@@ -105,7 +119,7 @@ export const isInArgentMobileAppBrowser = (): boolean => {
 };
 
 
-const wallets = [
+const wallets: WalletConfig[] = [
   {
     id: "argentX",
     name: "Argent X",
